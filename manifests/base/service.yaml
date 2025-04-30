@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: blog-be-service
+  labels:
+    app: blog-be-app
+spec:
+  type: ClusterIP
+  selector:
+    app: blog-be-app
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080

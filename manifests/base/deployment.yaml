@@ -1,0 +1,41 @@
+# deployment.yaml (modificato)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog-be-deployment
+  labels:
+    app: blog-be-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blog-be-app
+  template:
+    metadata:
+      labels:
+        app: blog-be-app
+    spec:
+      serviceAccountName: blog-be-sa
+      containers:
+        - name: blog-ai-aws-tunnel-mysql
+          image: europe-west4-docker.pkg.dev/gcp-automated-blog-test/auto-blog-gar/blog-ai-assistant-aws-tunnel:96f7138
+          imagePullPolicy: Always
+          env:
+          - name: INSTANCE_NAME
+            value: "automated-blog-bastion-host"
+          - name: REMOTE_HOST
+            value: "automated-blog-db.cdm00oci41gf.eu-west-1.rds.amazonaws.com"
+          - name: REMOTE_PORT
+            value: "3306"
+          - name: LOCAL_PORT
+            value: "3306"
+          - name: AWS_REGION
+            value: "eu-west-1"
+          - name: GCP_PROJECT_ID
+            value: "gcp-automated-blog-test"
+        - name: blog-be
+          image: app-image
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: blog-be-config

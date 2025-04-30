@@ -1,0 +1,4 @@
+namespace: blog-be
+resources:
+  - ../../base
+  - config-map.yaml
