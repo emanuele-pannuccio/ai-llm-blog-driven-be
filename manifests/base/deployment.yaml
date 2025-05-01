@@ -18,21 +18,19 @@ spec:
       serviceAccountName: blog-be-sa
       containers:
         - name: blog-ai-aws-tunnel-mysql
-          image: europe-west4-docker.pkg.dev/gcp-automated-blog-test/auto-blog-gar/blog-ai-assistant-aws-tunnel:96f7138
+          image: aws-image
           imagePullPolicy: Always
           env:
-          - name: INSTANCE_NAME
-            value: "automated-blog-bastion-host"
-          - name: REMOTE_HOST
-            value: "automated-blog-db.cdm00oci41gf.eu-west-1.rds.amazonaws.com"
-          - name: REMOTE_PORT
-            value: "3306"
-          - name: LOCAL_PORT
-            value: "3306"
-          - name: AWS_REGION
-            value: "eu-west-1"
-          - name: GCP_PROJECT_ID
-            value: "gcp-automated-blog-test"
+            - name: REMOTE_PORT
+              value: "3306"
+            - name: LOCAL_PORT
+              value: "3306"
+            - name: AWS_REGION
+              value: "eu-west-1"
+            - name: AWS_ACCESS_KEY_ID_SECRET
+              value: "blog-be-aws-access-key-id"
+            - name: AWS_SECRET_ACCESS_KEY_SECRET
+              value: "blog-be-aws-secret-access-key"
         - name: blog-be
           image: app-image
           imagePullPolicy: Always

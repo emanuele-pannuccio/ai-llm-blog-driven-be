@@ -15,6 +15,8 @@ env:
   CLUSTER_ZONE: europe-west4-a
   SKAFFOLD_ENVIRONMENT: prod
   BASTION_HOST: autoblog-prod-bastion-vm
+  # SIDECAR CONTAINER
+  AWS_IMAGE: "europe-west4-docker.pkg.dev/gcp-automated-blog-test/autoblog-test-gar/blog-ai-assistant-aws-tunnel:45b4583"
 
 jobs:
   sast-analysis:
@@ -127,7 +129,7 @@ jobs:
         run: |
           curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
           sudo install skaffold /usr/local/bin/
-          skaffold deploy -p ${{ env.SKAFFOLD_ENVIRONMENT }} --images=app-image=${{ env.AR_URL }}/${{ env.IMAGE_NAME }}:$(git rev-parse --short HEAD)
+          skaffold deploy -p ${{ env.SKAFFOLD_ENVIRONMENT }} --images=app-image=${{ env.AR_URL }}/${{ env.IMAGE_NAME }}:$(git rev-parse --short HEAD),aws-image="${{ env.AWS_IMAGE }}"
 
   cd-only:
     needs: check-application-mod
@@ -173,4 +175,4 @@ jobs:
 
           LATEST_TAG=$(gcloud artifacts docker tags list ${{ env.AR_URL }}/${{ env.IMAGE_NAME }}   --sort-by="~timestamp" --limit=1 --format="value(tag)")
 
-          skaffold deploy -p ${{ env.SKAFFOLD_ENVIRONMENT }} --images=app-image="${{ env.AR_URL }}/${{ env.IMAGE_NAME }}:$LATEST_TAG"
+          skaffold deploy -p ${{ env.SKAFFOLD_ENVIRONMENT }} --images=app-image="${{ env.AR_URL }}/${{ env.IMAGE_NAME }}:$LATEST_TAG",aws-image="${{ env.AWS_IMAGE }}"
