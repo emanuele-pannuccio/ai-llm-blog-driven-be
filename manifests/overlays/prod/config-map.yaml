@@ -4,4 +4,4 @@ kind: ConfigMap
 metadata:
   name: blog-be-config
 data:
-  ALLOW_ORIGIN: 'http://localhost:8081'
+  ALLOW_ORIGIN: "http://localhost:8080"
