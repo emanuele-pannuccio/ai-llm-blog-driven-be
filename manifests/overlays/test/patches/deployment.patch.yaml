@@ -9,7 +9,7 @@
   value:
     name: INSTANCE_NAME
     value: "autoblog-test-bastion-host"
-
+###
 - op: add
   path: /spec/template/spec/containers/0/env/-
   value:
