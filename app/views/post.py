@@ -9,7 +9,7 @@ post_bp = Blueprint('post', __name__, url_prefix='/api/post')
 post_orm_schema = PostORMSchema()
 post_schema = PostSchema()
 
-@post_bp.route('/', methods=['GET'])
+@post_bp.route('', methods=['GET'])
 @jwt_required(optional=True)
 def get_all_posts():
     """Ottieni tutti i post attivi"""
@@ -23,8 +23,6 @@ def get_all_posts():
         for k in ["show_all"]:
             if k in data.keys(): del data[k]
     
-    if data.get("include_deleted", None): g.bypass_filter=True
-
     try:
         posts, total_pages, page, total_count = PostService.get_all_posts(**data)
         return jsonify(result=post_orm_schema.dump(posts, many=True), total_pages=total_pages, page=page, total_count=total_count), 200
@@ -40,8 +38,8 @@ def get_post(post_id):
         return jsonify({"message": "Post not found"}), 404
     return jsonify(post_orm_schema.dump(post)), 200
 
-@post_bp.route('/', methods=['POST'])
-@required_role(["admin"])
+@post_bp.route('', methods=['POST'])
+@jwt_required()
 def create_post():
     data = request.get_json()
     errors = post_schema.validate(data)
@@ -60,15 +58,15 @@ def create_post():
     except ValueError as e:
         return jsonify({"message": str(e)}), 400
 
-@post_bp.route("/", methods=["OPTIONS"])
+@post_bp.route("", methods=["OPTIONS"])
 def options():
     return '', 204
 
 @post_bp.route('/<int:post_id>', methods=['PUT'])
-@required_role(["admin"])
+@jwt_required()
 def update_post(post_id):
     """Aggiorna un post esistente"""
-    post = PostService.get_post_by_id(post_id)
+    post = PostService.get_post_by_id(post_id, admin=current_user and current_user.role.role == "admin")
     if not post:
         return jsonify({"message": "Post not found"}), 404
     
@@ -85,10 +83,10 @@ def update_post(post_id):
         return jsonify({"message": str(e)}), 400
 
 @post_bp.route('/<int:post_id>', methods=['DELETE'])
-@required_role(["admin"])
+@jwt_required()
 def delete_post(post_id):
     """Elimina logicamente un post"""
-    post = PostService.get_post_by_id(post_id)
+    post = PostService.get_post_by_id(post_id, admin=current_user and current_user.role.role == "admin")
     if not post:
         return jsonify({"message": "Post not found"}), 404
     
@@ -97,10 +95,10 @@ def delete_post(post_id):
     return jsonify({"message": "Failed to delete post"}), 500
 
 @post_bp.route('/<int:post_id>/restore', methods=['PUT'])
-@required_role(["admin"])
+@jwt_required()
 def restore_post(post_id):
     """Ripristina un post cancellato logicamente"""
-    post = PostService.get_post_by_id(post_id, include_deleted=True)
+    post = PostService.get_post_by_id(post_id, admin=current_user and current_user.role.role == "admin")
     if not post:
         return jsonify({"message": "Post not found"}), 404
     

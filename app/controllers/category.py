@@ -21,7 +21,7 @@ class CategoryService:
             for post in cat.posts:
                 post.status_id = 1
                 post.category_id = None
-                # Essendo che li vado ad eliminare la categoria, va scelta una categoria di rimpiazzo nel caso in cui non venga indicata
+                # Essendo che li vado ad eliminare, la categoria, va scelta una categoria di rimpiazzo nel caso in cui non venga indicata
         
         try:
             db.session.delete(cat)
@@ -65,8 +65,13 @@ class CategoryService:
         name_filter = kwargs.get("name")
         page = kwargs.get('page', 1)
         per_page = kwargs.get('per_page', 10)
+        admin = kwargs.get('admin', 10)
 
         query = db.session.query(Category)
+
+        if admin:
+            query = query.execution_options(include_all=True)
+            
         if name_filter:
             query = query.filter(Category.name.ilike(f"%{name_filter}%"))
 

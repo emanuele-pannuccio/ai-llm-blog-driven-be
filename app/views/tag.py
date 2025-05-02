@@ -8,11 +8,11 @@ tag_bp = Blueprint('tag_bp', __name__, url_prefix='/api/tag')
 tag_schema = TagSchema()
 
 
-@tag_bp.route("/", methods=["OPTIONS"])
+@tag_bp.route('', methods=["OPTIONS"])
 def options():
     return '', 204
 
-@tag_bp.route('/', methods=['GET'])
+@tag_bp.route('', methods=['GET'])
 def get_all_tags():
     try:
         data = request.get_json()
@@ -28,7 +28,7 @@ def get_tag(tag_id):
         return jsonify({'message': 'Tag not found'}), 404
     return jsonify(success=True, result=tag_schema.dump(tag)), 200
 
-@tag_bp.route('/', methods=['POST'])
+@tag_bp.route('', methods=['POST'])
 # @required_role(["admin", "editor"])
 # @jwt_required()
 def create_tag():

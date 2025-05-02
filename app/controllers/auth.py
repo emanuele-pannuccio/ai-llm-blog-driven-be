@@ -1,7 +1,10 @@
 from flask import jsonify
-from flask_jwt_extended import create_access_token, create_refresh_token, current_user, get_jti, unset_jwt_cookies
+from flask_jwt_extended import create_access_token, create_refresh_token, current_user, get_jti, unset_jwt_cookies, get_jwt
+
+import json
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from database import db
 from models.token import Token
@@ -12,77 +15,89 @@ from config import Config
 class AuthService:
     @staticmethod
     def createToken(user_data):
-        """Crea un nuovo utente con password hashata"""
-        # Verifica se l'utente esiste già
-        user : User = User.query.filter(User.email == user_data['email']).one_or_none()
+        """Verifica le credenziali e genera access e refresh token."""
+        user = User.query.filter_by(email=user_data['email']).one_or_none()
 
-        if user is None or not user.verify_password(user_data["password"]):
+        if not user or not user.verify_password(user_data["password"]):
             raise ValueError("Wrong email or password")
         
-        access_token = AuthService.createAccessToken(user)
         refresh_token = AuthService.createRefreshToken(user)
+        access_token = AuthService.createAccessToken(user, get_jti(refresh_token))
 
         return {"access_token": access_token, "refresh_token": refresh_token}
     
     @staticmethod
-    def createAccessToken(user):
-        AuthService.revokeOldAccessToken(user)
+    def refresh_from_token(jwt_payload):
+        jti = jwt_payload["jti"]
 
-        access_token = create_access_token(identity=str(user.id), expires_delta=Config.JWT_ACCESS_TOKEN_EXPIRES)
-        access_token_db_rec = Token(jti=get_jti(access_token), type="ACCESS", user_id=user.id)
-        db.session.add(access_token_db_rec)
-        db.session.commit()
+        if AuthService.is_token_revoked(jti):
+            raise ValueError("Refresh token is revoked")
 
-        return access_token
-    
-    @staticmethod
-    def revokeOldAccessToken(user):
-        old_access_token : Token = Token.query.filter(Token.revoked_at == None,Token.user_id == user.id,Token.type == "ACCESS").one_or_none()
+        user_id = int(jwt_payload["sub"])
+        user = User.query.get(user_id)
 
-        if old_access_token is not None:
-            old_access_token.revoked_at = datetime.now()
-            db.session.commit()
-
-    @staticmethod
-    def createRefreshToken(user):
-        AuthService.revokeOldRefreshToken(user)
-
-        refresh_token = create_refresh_token(identity=str(user.id))
-        refresh_token_db_rec = Token(jti=get_jti(refresh_token), type="REFRESH", user_id=user.id)
-        db.session.add(refresh_token_db_rec)
-        db.session.commit()
-
-        return refresh_token
-
-    @staticmethod
-    def revokeOldRefreshToken(user):
-        old_refr_token : Token = Token.query.filter(Token.revoked_at == None,Token.user_id == user.id,Token.type == "REFRESH").one_or_none()
-
-        if old_refr_token is not None:
-            old_refr_token.revoked_at = datetime.now()
-            db.session.commit()
-
-    @staticmethod
-    def refreshAccessToken(user):
-        """Crea un nuovo utente con password hashata"""
-        # Verifica se l'utente esiste già
-        print(user)
-
-        access_token = AuthService.createAccessToken(user)
+        # Crea nuovo access token
+        access_token = AuthService.createAccessToken(user, jti)
 
         return {"access_token": access_token}
     
     @staticmethod
-    def logout(user):
-        AuthService.revokeOldAccessToken(user)
-        AuthService.revokeOldRefreshToken(user)
+    def createAccessToken(user, refresh_token):
+        return create_access_token(
+            identity=str(user.id),
+            expires_delta=Config.JWT_ACCESS_TOKEN_EXPIRES,
+            additional_claims={
+                "refresh_token" : refresh_token
+            }
+        )
 
-        return {"ok" : 1}
+    @staticmethod
+    def createRefreshToken(user):
+        return create_refresh_token(
+            identity=str(user.id),
+            expires_delta=Config.JWT_REFRESH_TOKEN_EXPIRES
+        )
+
+    @staticmethod
+    def logout_tokens(jwt_payload):
+        """Revoca i token presenti nella richiesta JWT."""
+        jti = jwt_payload["jti"]
+        token_type = jwt_payload["type"]
+        user_id = jwt_payload["sub"]
+
+        revoked_jwt = Token(
+            jti=jti,
+            type=token_type.upper(),
+            user_id=int(user_id),
+            revoked_at=datetime.now(ZoneInfo("Europe/Rome"))
+        )
+
+        revoked_refresh_jwt = Token(
+            jti=jwt_payload["refresh_token"],
+            type="REFRESH",
+            user_id=int(user_id),
+            revoked_at=datetime.now(ZoneInfo("Europe/Rome"))
+        )
+
+        db.session.add(revoked_jwt)
+        db.session.add(revoked_refresh_jwt)
+        db.session.commit()
+
+        return {"msg": f"{token_type.capitalize()} token revoked."}
+
+    @staticmethod
+    def is_token_revoked(jti):
+        """Controlla se il token è stato revocato (blacklistato)."""
+        return db.session.query(
+            db.exists().where(Token.jti == jti)
+        ).scalar()
 
     @staticmethod
     def findToken(jti):
-        return Token.query.filter(Token.jti == jti, Token.revoked_at == None).one_or_none()
+        """Recupera il token solo se è stato blacklistato."""
+        return Token.query.filter_by(jti=jti).one_or_none()
 
     @staticmethod
-    def checkRevokedToken(jti):
-        return AuthService.findToken(jti) is None
+    def refreshAccessToken(user):
+        access_token = AuthService.createAccessToken(user)
+        return {"access_token": access_token}

@@ -13,7 +13,7 @@ user_bp = Blueprint('user', __name__, url_prefix="/api/user")
 user_schema = UserSchema()
 user_orm_schema = UserORMSchema()
 
-@user_bp.route('/', methods=['POST'])
+@user_bp.route('', methods=['POST'])
 def create_user():
     """Crea un nuovo utente"""
     data = request.get_json()
@@ -51,7 +51,7 @@ def create_user():
             "message": "Internal server error"
         }), 500
 
-@user_bp.route('/', methods=['GET'])
+@user_bp.route('', methods=['GET'])
 def get_all_users():
     """Ottieni tutti gli utenti (paginati)"""
     try:

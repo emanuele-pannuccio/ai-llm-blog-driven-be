@@ -11,11 +11,9 @@ from jwt_auth import jwt
 from views.user import user_bp
 from views.auth import auth_bp
 from views.post import post_bp
-from views.comment import comment_bp
 from views.tag import tag_bp
 from views.category import category_bp
 
-from controllers.auth import AuthService
 
 # region MODELS
 
@@ -24,7 +22,6 @@ from models.post_rel import *
 from models.post_status import PostStatus
 from models.category import Category
 from models.post import Post
-from models.comment import Comment
 from models.tag import Tag
 from models.token import Token
 from models.user import User
@@ -32,17 +29,6 @@ from models.user import User
 from config import Config
 
 #endregion
-
-@jwt.user_lookup_loader
-def user_lookup_callback(_jwt_header, jwt_data):
-    identity = jwt_data["sub"]
-    return User.query.filter_by(id=int(identity)).one_or_none()
-
-@jwt.token_in_blocklist_loader
-def check_if_token_revoked(jwt_header, jwt_payload):
-    """Callback per verificare se il token è revocato"""
-    jti = jwt_payload["jti"]
-    return AuthService.checkRevokedToken(jti)
 
 def create_app():
     app = Flask(__name__)
@@ -60,7 +46,6 @@ def create_app():
     app.register_blueprint(user_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(post_bp)
-    app.register_blueprint(comment_bp)
     app.register_blueprint(tag_bp)
     app.register_blueprint(category_bp)
     
@@ -95,7 +80,7 @@ if __name__ == '__main__':
                 db.session.commit()
 
         if not Role.query.first():
-            for role_name in ["user", "admin", "editor"]:
+            for role_name in ["user", "admin"]:
                 role = Role(role=role_name)
                 db.session.add(role)
                 db.session.commit()
@@ -106,5 +91,4 @@ if __name__ == '__main__':
                 db.session.add(status_orm)
                 db.session.commit()
 
-    app.run(host='0.0.0.0', port="8080")
-    #
+    app.run(host='0.0.0.0', port="8081", debug=True)

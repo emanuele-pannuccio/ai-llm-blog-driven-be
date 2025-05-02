@@ -12,4 +12,4 @@ class Token(db.Model):
     revoked_at = db.Column(db.TIMESTAMP, default=None)
     
     # Relazione con l'utente
-    user = db.relationship("User", back_populates="tokens")
+    user = db.relationship("User", back_populates="tokens", lazy="selectin")

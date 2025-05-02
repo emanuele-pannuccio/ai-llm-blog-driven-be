@@ -5,7 +5,9 @@ from dataclasses import dataclass
 
 from sqlalchemy import inspect
 
-class User(db.Model):
+from models.utils.soft_delete_query import SoftDeleteMixin
+
+class User(db.Model, SoftDeleteMixin):
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -18,10 +20,9 @@ class User(db.Model):
     deleted_at = db.Column(db.TIMESTAMP, default=None)
     
     # Relazioni
-    role = db.relationship("Role", back_populates="user", lazy="joined")
-    posts = db.relationship("Post", back_populates="user")
-    comments = db.relationship("Comment", back_populates="user")
-    tokens = db.relationship("Token", back_populates="user")
+    role = db.relationship("Role", back_populates="users", lazy="joined")
+    posts = db.relationship("Post", back_populates="user", lazy="selectin")
+    tokens = db.relationship("Token", back_populates="user", lazy="selectin")
     
     # Metodi per la gestione della password
     @property
@@ -44,6 +45,3 @@ class User(db.Model):
         if image is None:
             image = ""
         self.img = image
-    
-    # def __dict__(self):
-    #     return { c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs }
