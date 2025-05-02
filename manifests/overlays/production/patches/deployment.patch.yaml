@@ -15,9 +15,3 @@
   value:
     name: REMOTE_HOST
     value: "autoblog-prod-db.cdm00oci41gf.eu-west-1.rds.amazonaws.com"
-
-- op: add
-  path: /spec/template/spec/containers/1/env/-
-  value:
-    name: GCP_PROJECT_ID
-    value: "gcp-automated-blog-prod"
