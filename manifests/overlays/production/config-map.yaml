@@ -5,3 +5,4 @@ metadata:
   name: blog-be-config
 data:
   ALLOW_ORIGIN: "http://localhost:8080"
+  GCP_PROJECT_ID: "gcp-automated-blog-prod"
