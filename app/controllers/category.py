@@ -33,7 +33,7 @@ class CategoryService:
 
 
     @staticmethod
-    def create_category(name):
+    def create_category(name, image):
         if not name:
             raise ValueError("Missing category name.")
 
@@ -41,7 +41,7 @@ class CategoryService:
         if existing_category:
             raise ValueError("Category already exists.")
 
-        category = Category(name=name)
+        category = Category(name=name, image=image)
         db.session.add(category)
         db.session.commit()
         return category
