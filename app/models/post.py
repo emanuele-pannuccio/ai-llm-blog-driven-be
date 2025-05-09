@@ -26,11 +26,10 @@ class Post(db.Model):
     deleted_at = db.Column(db.TIMESTAMP, default=None)
     
     # Relazioni
-    user = db.relationship("User", back_populates="posts")
-    tags = db.relationship("Tag", secondary=post_tags, back_populates="posts")
-    category = db.relationship("Category", back_populates="posts")
-    comments = db.relationship("Comment", back_populates="post", cascade="all, delete-orphan")
-    status = db.relationship("PostStatus", back_populates="posts")
+    user = db.relationship("User", back_populates="posts", lazy="selectin")
+    tags = db.relationship("Tag", secondary=post_tags, back_populates="posts", lazy="selectin")
+    category = db.relationship("Category", back_populates="posts", lazy="selectin")
+    status = db.relationship("PostStatus", back_populates="posts", lazy="selectin")
 
 
 # @event.listens_for(db.session.__class__, "do_orm_execute")

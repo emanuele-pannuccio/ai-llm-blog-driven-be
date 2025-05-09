@@ -5,4 +5,4 @@ class PostStatus(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     status = db.Column(db.String(50), nullable=False, unique=True)
-    posts = db.relationship("Post", back_populates="status")
+    posts = db.relationship("Post", back_populates="status", lazy="selectin")

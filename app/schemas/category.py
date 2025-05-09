@@ -4,6 +4,7 @@ from schemas.post import PostORMSchema
 
 class CategoryCreateSchema(Schema):
     name = fields.String(required=True, validate=validate.Length(min=1))
+    image = fields.String(required=True, validate=validate.Length(min=1))
 
 class CategorySchema(Schema):
     id = fields.Integer()

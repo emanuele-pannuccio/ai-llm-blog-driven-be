@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, current_user
 from sqlalchemy.orm.exc import NoResultFound
 from marshmallow import ValidationError
 from jwt_auth import required_role
@@ -10,11 +11,11 @@ category_bp = Blueprint('categories', __name__, url_prefix="/api/category")
 create_schema = CategoryCreateSchema()
 output_schema = CategorySchema()
 
-@category_bp.route("/", methods=["OPTIONS"])
+@category_bp.route('', methods=["OPTIONS"])
 def options():
     return '', 204
 
-@category_bp.route('/', methods=['POST'])
+@category_bp.route('', methods=['POST'])
 def create_category():
     try:
         data = create_schema.load(request.json)
@@ -26,6 +27,7 @@ def create_category():
         return jsonify({'error': str(e)}), 400
     
 @category_bp.route('/<int:category_id>', methods=['GET'])
+@jwt_required(optional=True)
 def get_category(category_id):
     try:
         category = CategoryService.get_category(category_id)
@@ -33,23 +35,24 @@ def get_category(category_id):
     except NoResultFound:
         return jsonify({'error': 'Categoria non trovata'}), 404
 
-@category_bp.route('/', methods=['GET'])
+@category_bp.route('', methods=['GET'])
+@jwt_required(optional=True)
 def list_categories():
     try:
         data = request.get_json()
     except:
         data = {}
 
-    categories, total_pages, page, total_count = CategoryService.list_categories(**data)
-    obj = output_schema.dump(categories, many=True)
+    categories, total_pages, page, total_count = CategoryService.list_categories(**data, admin=current_user and current_user.role.role == "admin")
 
-    for cat in obj:
-        cat["posts"] = list(filter(lambda x :  x["deleted_at"] == None, cat["posts"]))
+    
+
+    obj = output_schema.dump(categories, many=True)
 
     return jsonify(result=obj, total_pages=total_pages, page=page, total_count=total_count), 200
 
 @category_bp.route('/<int:category_id>', methods=['DELETE'])
-@required_role(["admin"])
+@jwt_required()
 def delete_category(category_id):
     try:
         category = CategoryService.delete_category(category_id)

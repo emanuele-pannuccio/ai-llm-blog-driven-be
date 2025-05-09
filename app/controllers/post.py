@@ -10,7 +10,6 @@ from controllers.tag import TagService
 from controllers.category import CategoryService
 
 from models.post import Post
-from models.comment import Comment
 from models.tag import Tag
 from models.user import User
 from models.post_status import PostStatus
@@ -33,7 +32,6 @@ class PostService:
             - author (int)
             - show_all (bool)
         """
-        include_deleted = kwargs.get('include_deleted', False)
         sort_by = kwargs.get('sort_by', 'created_at')
         sort_order = kwargs.get('sort_order', 'desc')
         page = kwargs.get('page', 1)
@@ -47,15 +45,8 @@ class PostService:
 
         query = db.session.query(Post)
 
-        if not include_deleted and not show_all:
-            now = datetime.now()
-            query = query.filter(
-                (Post.deleted_at == None) &
-                (Post.created_at != None) &
-                (Post.status_id == 2) &
-                (Post.publisher_id != None) &
-                (Post.created_at <= now)
-            )
+        if show_all:
+            query = query.execution_options(include_all=True)
 
         if text:
             query = query.filter(or_(
@@ -76,8 +67,6 @@ class PostService:
 
         if status:
             query = query.join(Post.status).filter(PostStatus.status == status)
-        elif not include_deleted:
-            query = query.join(Post.status).filter(PostStatus.status == "public")
 
         total_count = query.count()
         total_pages = math.ceil(total_count / per_page) if per_page else 1
@@ -85,11 +74,7 @@ class PostService:
         if page is not None and page > total_pages:
             return [], 0, 1, 0
 
-        if sort_by == 'comments':
-            query = query.outerjoin(Post.comments).group_by(Post.id)
-            sort_by = db.func.count(Comment.id)
-        else:
-            sort_by = getattr(Post, sort_by, Post.created_at)
+        sort_by = getattr(Post, sort_by, Post.created_at)
 
         if sort_order == 'asc':
             query = query.order_by(sort_by.asc())
@@ -101,16 +86,19 @@ class PostService:
         else:
             total_pages = 1
 
-        return query.all(), total_pages, page, total_count
+        records = query.all()
+
+        return records, total_pages, page, total_count
 
 
     @staticmethod
     def get_post_by_id(post_id, include_deleted=False, admin=False):
         """Ottieni un post specifico per ID"""
+        query = Post.query
         if admin:
-           g.bypass_filter=True
+            query = query.execution_options(include_all=True)
            
-        return Post.query.filter(Post.id == post_id).one_or_none()
+        return query.filter(Post.id == post_id).one_or_none()
 
     @staticmethod
     def create_post(post_data):
@@ -157,6 +145,10 @@ class PostService:
             if 'image' in update_data:
                 post.image = update_data['image']
             
+            if 'status' in update_data:
+                status = PostStatus.query.filter(PostStatus.status == update_data['status']).one_or_none()
+                post.status = status
+            
             if 'created_at' in update_data:
                 post.created_at = update_data["created_at"]
 
@@ -174,10 +166,6 @@ class PostService:
                 category = Category.query.filter(Category.name == update_data["category"]).one_or_none()
                 post.category = category
 
-            if 'status' in update_data:
-                status = PostStatus.query.filter(PostStatus.status == update_data['status']).one_or_none()
-                post.status = status
-            
             db.session.commit()
             return post
         except SQLAlchemyError as e:
