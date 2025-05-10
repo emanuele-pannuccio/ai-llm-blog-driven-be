@@ -22,3 +22,4 @@ class Config:
     CORS_HEADERS = 'Content-Type'
     ALLOW_ORIGIN = os.environ.get('ALLOW_ORIGIN', "http://localhost:8083")
     PORT = os.environ.get('FLASK_PORT', "8080")
+#

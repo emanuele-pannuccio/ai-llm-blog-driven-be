@@ -31,6 +31,10 @@ spec:
               value: "blog-be-aws-access-key-id"
             - name: AWS_SECRET_ACCESS_KEY_SECRET
               value: "blog-be-aws-secret-access-key"
+            - name: GCP_OAUTH_AUD
+              value: "101473088463169348979"
+            - name: AWS_ROLE_ARN
+              value: "arn:aws:iam::460446231952:role/autoblog-test-gcp-101473088463169348979"
         - name: blog-be
           image: app-image
           imagePullPolicy: Always
