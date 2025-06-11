@@ -15,3 +15,15 @@
   value:
     name: REMOTE_HOST
     value: "autoblog-test-db.cdm00oci41gf.eu-west-1.rds.amazonaws.com"
+
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: GCP_OAUTH_AUD
+    value: "101473088463169348979"
+
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: AWS_ROLE_ARN
+    value: "arn:aws:iam::460446231952:role/autoblog-test-gcp-101473088463169348979"
